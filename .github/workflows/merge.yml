@@ -1,10 +1,8 @@
 name: sub_merge
 
-# 触发条件
 on:
   workflow_dispatch:
   schedule:
-    # 每天北京时间 08:00 和 20:00 自动运行
     - cron: "0 0,12 * * *"
 
 jobs:
@@ -12,23 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4 # 升级到 v4
+        uses: actions/checkout@v4
 
       - name: Install Python
-        uses: actions/setup-python@v5 # 升级到 v5
+        uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
-      - name: Load Cache
-        uses: actions/cache@v4 # 升级到 v4，解决报错核心
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/run_in_Actions/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
       - name: Set Timezone
-        run: sudo timedatectl set-timezone 'Asia/Shanghai' # 改为北京时间
+        run: sudo timedatectl set-timezone 'Asia/Shanghai'
 
       - name: Install Requirements
         run: |
