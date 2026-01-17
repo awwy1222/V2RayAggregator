@@ -1,2 +1,25 @@
-# 转换 API 暂时繁忙，请稍后在 Actions 中重跑
-proxies: []
+
+mixed-port: 7890
+allow-lan: true
+mode: rule
+log-level: info
+proxy-providers:
+  my_nodes:
+    type: http
+    url: "https://raw.githubusercontent.com/awwy1222/V2RayAggregator/master/sub/sub_merge.txt"
+    interval: 3600
+    path: ./sub_merge.txt
+    health-check:
+      enable: true
+      interval: 600
+      url: http://www.gstatic.com/generate_204
+proxy-groups:
+  - name: 🚀 自动选择
+    type: url-test
+    use: [my_nodes]
+  - name: 🎯 手动切换
+    type: select
+    use: [my_nodes]
+rules:
+  - GEOIP,CN,DIRECT
+  - MATCH,🚀 自动选择
