@@ -1,30 +1,17 @@
 [
-  {
-    "id": 0,
-    "remarks": "最新收割源A",
-    "site": "GitHub-Free",
-    "url": "https://raw.githubusercontent.com/freefq/free/master/v2",
-    "enabled": true
-  },
-  {
-    "id": 1,
-    "remarks": "最新收割源B",
-    "site": "Aiboboxx",
-    "url": "https://raw.githubusercontent.com/aiboboxx/v2rayfree/main/v2",
-    "enabled": true
-  },
-  {
-    "id": 2,
-    "remarks": "最新收割源C",
-    "site": "Vveg26",
-    "url": "https://raw.githubusercontent.com/vveg26/SubAutoConv/main/sub/share/all",
-    "enabled": true
-  },
-  {
-    "id": 3,
-    "remarks": "最新收割源D",
-    "site": "Yebekhe",
-    "url": "https://raw.githubusercontent.com/yebekhe/TelegramV2rayCollector/main/sub/mix",
-    "enabled": true
-  }
+  { "remarks": "【全球爬虫】Telegram聚合", "url": "https://raw.githubusercontent.com/yebekhe/TelegramV2rayCollector/main/sub/mix", "enabled": true },
+  { "remarks": "【每日万更】NodeFree", "url": "https://raw.githubusercontent.com/vveg26/SubAutoConv/main/sub/share/all", "enabled": true },
+  { "remarks": "【全协议】Eternity", "url": "https://raw.githubusercontent.com/mahdibland/ShadowsocksAggregator/master/Eternity", "enabled": true },
+  { "remarks": "【高频采集】Aiboboxx", "url": "https://raw.githubusercontent.com/aiboboxx/v2rayfree/main/v2", "enabled": true },
+  { "remarks": "【精品池】Mfuu", "url": "https://raw.githubusercontent.com/mfuu/v2ray/master/v2ray", "enabled": true },
+  { "remarks": "【自动更新】Lonelam", "url": "https://raw.githubusercontent.com/Lonelam/NodeList/main/v2ray.txt", "enabled": true },
+  { "remarks": "【多源汇聚】Anaer", "url": "https://raw.githubusercontent.com/anaer/Sub/main/clash.yaml", "enabled": true },
+  { "remarks": "【全网抓取】PeiSqi", "url": "https://raw.githubusercontent.com/PeiSqi/Clash-Node-Pool/main/list.txt", "enabled": true },
+  { "remarks": "【极速源】Pawdroid", "url": "https://raw.githubusercontent.com/Pawdroid/Free-servers/main/sub", "enabled": true },
+  { "remarks": "【海量池】Jsnzkpg", "url": "https://raw.githubusercontent.com/Jsnzkpg/Jsnzkpg/Jsnzkpg/Jsnzkpg", "enabled": true },
+  { "remarks": "【采集聚合】Leon406", "url": "https://raw.githubusercontent.com/Leon406/SubCrawler/main/sub/share/all", "enabled": true },
+  { "remarks": "【新鲜速递】Ripao", "url": "https://raw.githubusercontent.com/ripaojiedian/freenode/main/v2ray", "enabled": true },
+  { "remarks": "【精选大户】SrS", "url": "https://raw.githubusercontent.com/ssrsub/ssr/master/V2Ray", "enabled": true },
+  { "remarks": "【多协议】Freenode", "url": "https://raw.githubusercontent.com/openRunner/clash-freenode/main/clash.yaml", "enabled": true },
+  { "remarks": "【暴力收割】VmessActions", "url": "https://raw.githubusercontent.com/DoveBoy/Vmess-Actions/main/subscribe/clash.yaml", "enabled": true }
 ]
