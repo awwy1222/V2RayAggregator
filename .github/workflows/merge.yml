@@ -39,4 +39,4 @@ jobs:
           git add .
           # 如果有冲突，强制以本地生成的结果为准
           git commit -m "Auto Update Nodes" || exit 0
-          git push origin master --force
+          git push origin master --force   
