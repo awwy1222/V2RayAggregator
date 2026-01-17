@@ -3,23 +3,40 @@ mixed-port: 7890
 allow-lan: true
 mode: rule
 log-level: info
+ipv6: false
+
 proxy-providers:
   my_nodes:
     type: http
     url: "https://raw.githubusercontent.com/awwy1222/V2RayAggregator/master/sub/sub_merge.txt"
     interval: 3600
-    path: ./sub_merge.txt
+    path: ./nodes_data.txt
     health-check:
       enable: true
       interval: 600
       url: http://www.gstatic.com/generate_204
+
 proxy-groups:
+  - name: 🤖 Gemini 专用
+    type: url-test
+    use: [my_nodes]
+    url: 'https://generativelanguage.googleapis.com/v1beta/models'
+    interval: 300
+    tolerance: 50
+  
   - name: 🚀 自动选择
     type: url-test
     use: [my_nodes]
+    url: 'http://www.gstatic.com/generate_204'
+    interval: 300
+
   - name: 🎯 手动切换
     type: select
     use: [my_nodes]
+
 rules:
+  - DOMAIN-SUFFIX,gemini.google.com,🤖 Gemini 专用
+  - DOMAIN-SUFFIX,generativelanguage.googleapis.com,🤖 Gemini 专用
+  - DOMAIN-SUFFIX,ai.google.dev,🤖 Gemini 专用
   - GEOIP,CN,DIRECT
   - MATCH,🚀 自动选择
