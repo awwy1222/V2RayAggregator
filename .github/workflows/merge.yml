@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 获取完整历史，防止推送失败
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -24,7 +26,7 @@ jobs:
         run: |
           pip install -r ./utils/requirements.txt
 
-      - name: Run Merge Script
+      - name: Running Tasks
         run: |
           python ./utils/list_merge.py
 
@@ -33,5 +35,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Auto Update Nodes" || exit 0
-          git push
+          # 强制拉取远程更改并优先使用本地生成的结果
+          git pull origin master --rebase -X ours || echo "No remote changes to pull"
+          git commit -m "Auto Update Nodes (Strict Filtered)" || exit 0
+          git push origin master
