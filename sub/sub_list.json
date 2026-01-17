@@ -1,17 +1,7 @@
 [
-  { "remarks": "顶级采集1", "url": "https://raw.githubusercontent.com/yebekhe/TelegramV2rayCollector/main/sub/mix", "enabled": true },
-  { "remarks": "顶级采集2", "url": "https://raw.githubusercontent.com/vveg26/SubAutoConv/main/sub/share/all", "enabled": true },
-  { "remarks": "顶级采集3", "url": "https://raw.githubusercontent.com/mahdibland/ShadowsocksAggregator/master/Eternity", "enabled": true },
-  { "remarks": "顶级采集4", "url": "https://raw.githubusercontent.com/aiboboxx/v2rayfree/main/v2", "enabled": true },
-  { "remarks": "顶级采集5", "url": "https://raw.githubusercontent.com/Lonelam/NodeList/main/v2ray.txt", "enabled": true },
-  { "remarks": "顶级采集6", "url": "https://raw.githubusercontent.com/PeiSqi/Clash-Node-Pool/main/list.txt", "enabled": true },
-  { "remarks": "顶级采集7", "url": "https://raw.githubusercontent.com/Jsnzkpg/Jsnzkpg/Jsnzkpg/Jsnzkpg", "enabled": true },
-  { "remarks": "顶级采集8", "url": "https://raw.githubusercontent.com/Leon406/SubCrawler/main/sub/share/all", "enabled": true },
-  { "remarks": "顶级采集9", "url": "https://raw.githubusercontent.com/ssrsub/ssr/master/V2Ray", "enabled": true },
-  { "remarks": "顶级采集10", "url": "https://raw.githubusercontent.com/openRunner/clash-freenode/main/clash.yaml", "enabled": true },
-  { "remarks": "顶级采集11", "url": "https://raw.githubusercontent.com/anaer/Sub/main/clash.yaml", "enabled": true },
-  { "remarks": "顶级采集12", "url": "https://raw.githubusercontent.com/freefq/free/master/v2", "enabled": true },
-  { "remarks": "顶级采集13", "url": "https://raw.githubusercontent.com/Pawdroid/Free-servers/main/sub", "enabled": true },
-  { "remarks": "顶级采集14", "url": "https://raw.githubusercontent.com/tjm01/free-v2ray-node/master/v2ray.txt", "enabled": true },
-  { "remarks": "顶级采集15", "url": "https://raw.githubusercontent.com/mfuu/v2ray/master/v2ray", "enabled": true }
+  { "remarks": "【顶级】yebekhe-高频采集", "url": "https://raw.githubusercontent.com/yebekhe/TelegramV2rayCollector/main/sub/mix", "enabled": true },
+  { "remarks": "【顶级】mfuu-每日精选", "url": "https://raw.githubusercontent.com/mfuu/v2ray/master/v2ray", "enabled": true },
+  { "remarks": "【电报优质】B-Sub-新鲜度高", "url": "https://raw.githubusercontent.com/BaradaranH/V2Ray-Nodes/main/Nodes-SagerNet", "enabled": true },
+  { "remarks": "【大佬】Leon406-去重源", "url": "https://raw.githubusercontent.com/Leon406/SubCrawler/main/sub/share/all", "enabled": true },
+  { "remarks": "【社区精选】V2Next-低负载", "url": "https://raw.githubusercontent.com/v2next/v2ray-nodes/main/v2ray", "enabled": true }
 ]
