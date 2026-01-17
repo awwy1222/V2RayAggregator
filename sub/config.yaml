@@ -8,7 +8,7 @@ ipv6: false
 proxy-providers:
   my_nodes:
     type: http
-    url: "https://raw.githubusercontent.com/awwy1222/V2RayAggregator/master/sub/sub_merge.txt"
+    url: "https://mirror.ghproxy.com/https://raw.githubusercontent.com/awwy1222/V2RayAggregator/master/sub/sub_merge.txt"
     interval: 3600
     path: ./nodes_data.txt
     health-check:
@@ -17,26 +17,30 @@ proxy-providers:
       url: http://www.gstatic.com/generate_204
 
 proxy-groups:
+  # --- 1. Gemini 专项组：只在这里用专项探测 ---
   - name: 🤖 Gemini 专用
     type: url-test
     use: [my_nodes]
-    url: 'https://generativelanguage.googleapis.com/v1beta/models'
+    url: 'https://generativelanguage.googleapis.com/v1beta/models?key=CHECK'
     interval: 300
     tolerance: 50
   
-  - name: 🚀 自动选择
+  # --- 2. 自动选择组：全量节点参与测速 ---
+  - name: 🚀 全球自动
     type: url-test
     use: [my_nodes]
     url: 'http://www.gstatic.com/generate_204'
     interval: 300
 
+  # --- 3. 手动切换组：全量节点可见 ---
   - name: 🎯 手动切换
     type: select
     use: [my_nodes]
 
 rules:
+  # 分流逻辑
   - DOMAIN-SUFFIX,gemini.google.com,🤖 Gemini 专用
   - DOMAIN-SUFFIX,generativelanguage.googleapis.com,🤖 Gemini 专用
-  - DOMAIN-SUFFIX,ai.google.dev,🤖 Gemini 专用
+  - DOMAIN-SUFFIX,aistudio.google.com,🤖 Gemini 专用
   - GEOIP,CN,DIRECT
-  - MATCH,🚀 自动选择
+  - MATCH,🚀 全球自动
