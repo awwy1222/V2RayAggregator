@@ -24,25 +24,14 @@ jobs:
         run: |
           pip install -r ./utils/requirements.txt
 
-      - name: Running Tasks
+      - name: Run Merge Script
         run: |
-          wget -O subconverter.tar.gz https://github.com/tindy2013/subconverter/releases/download/v0.7.2/subconverter_linux64.tar.gz
-          tar -zxvf subconverter.tar.gz -C ./
-          chmod +x ./subconverter/subconverter && nohup ./subconverter/subconverter >./subconverter.log 2>&1 &
           python ./utils/list_merge.py
 
-      - name: Commit Changes
+      - name: Commit and Push
         run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git pull origin master
-          git add ./sub
-          git add ./utils/Country.mmdb
-          git add README.md
-          git commit -m "$(date '+%Y-%m-%d %H:%M:%S') Update Nodes" || echo "No changes to commit"
-
-      - name: Push Changes
-        uses: ad-m/github-push-action@master
-        with:
-          branch: master
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Auto Update Nodes" || exit 0
+          git push
