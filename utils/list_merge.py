@@ -1,47 +1,34 @@
-import requests, base64, os, json, urllib.parse, re, socket
+import requests, base64, os, json, urllib.parse, re
 
 def get_content(url, timeout_sec=60):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         r = requests.get(url, headers=headers, timeout=timeout_sec)
         return r.text if r.status_code == 200 else ""
-    except: return ""
-
-def verify_node(host, port):
-    """
-    第一步：最稳妥的梯子存活验证 (TCP 握手)
-    第二步：获取真实的公网 IP 用于去重
-    """
-    try:
-        # 获取物理 IP (解决域名马甲问题)
-        actual_ip = socket.gethostbyname(host)
-        # 尝试建立 TCP 连接 (验证梯子是否有响应)
-        with socket.create_connection((actual_ip, int(port)), timeout=2):
-            return actual_ip, True
     except:
-        return None, False
+        return ""
 
-def extract_node_info(node_str):
-    """精确解析不同协议的 Host 和 Port"""
+def extract_ip_port(node_str):
+    """
+    极简解析：从节点链接中提取关键特征（IP/域名+端口）用于深度去重
+    """
     try:
         if node_str.startswith("ss://"):
+            # ss://base64(method:password@host:port)#name
             content = node_str.split("//")[1].split("#")[0]
-            if "@" in content: host_port = content.split("@")[1]
+            if "@" in content:
+                host_port = content.split("@")[1]
             else:
-                padding = '=' * (4 - len(content) % 4)
-                decoded = base64.b64decode(content + padding).decode('utf-8', errors='ignore')
-                host_port = decoded.split("@")[1] if "@" in decoded else decoded
+                decoded = base64.b64decode(content + "==").decode('utf-8')
+                host_port = decoded.split("@")[1]
+            return host_port
         elif "://" in node_str:
-            parts = node_str.split("@")
-            if len(parts) > 1: host_port = parts[1].split("?")[0]
-            else: return None, None
-        
-        if ":" in host_port:
-            h = host_port.split(":")[0]
-            p = host_port.split(":")[1].split("/")[0]
-            return h, p
-    except: pass
-    return None, None
+            # 简单处理 vmess/trojan 等，提取 server 和 port 的关键部分
+            # 这只是为了去重，不需要完美解析
+            return re.search(r'@(.*?)\?', node_str).group(1) if '@' in node_str else node_str[:50]
+    except:
+        return node_str # 解析失败则返回原串
+    return node_str
 
 def start():
     repo = os.getenv('GITHUB_REPOSITORY', 'awwy1222/V2RayAggregator')
@@ -51,71 +38,75 @@ def start():
         sub_list = [item for item in json.load(f) if item.get('enabled')]
 
     all_nodes = []
-    seen_features = set() # 存储 (IP, Port) 元组
+    seen_features = set() # 用于 IP 级去重
 
-    print("🚀 开始多维度验证与去重...")
     for item in sub_list:
-        content = get_content(item['url'], 20)
-        if not content: continue
-        try:
-            padding = '=' * (4 - len(content.strip()) % 4)
-            nodes = base64.b64decode(content.strip() + padding).decode('utf-8', errors='ignore').split('\n')
-        except: nodes = content.split('\n')
-        
-        for n in nodes:
-            n = n.strip()
-            if not any(n.startswith(p) for p in ["vmess://", "ss://", "ssr://", "trojan://", "vless://"]): continue
+        print(f"正在收割: {item.get('remarks')}")
+        content = get_content(item['url'], 30)
+        if content:
+            try:
+                decoded = base64.b64decode(content.replace('\n','').replace('\r','') + "==").decode('utf-8')
+                nodes = decoded.split('\n')
+            except:
+                nodes = content.split('\n')
             
-            host, port = extract_node_info(n)
-            if host and port:
-                # 验证存活并获取物理 IP
-                actual_ip, is_alive = verify_node(host, port)
-                if is_alive:
-                    feature = (actual_ip, port)
-                    # [精确去重]：只有 IP 和 端口 都不重复才通过
+            for n in nodes:
+                n = n.strip()
+                if any(n.startswith(p) for p in ["vmess://", "ss://", "ssr://", "trojan://", "vless://"]):
+                    # 深度去重逻辑
+                    feature = extract_ip_port(n)
                     if feature not in seen_features:
                         all_nodes.append(n)
                         seen_features.add(feature)
 
-    print(f"✅ 筛选完成：已从冗余节点中提取出 {len(all_nodes)} 个真实的物理独立节点")
-    
+    print(f"\n✅ 深度去重完成：剩余 {len(all_nodes)} 个唯一节点")
+
     os.makedirs('./sub', exist_ok=True)
     with open('./sub/sub_merge.txt', 'w', encoding='utf-8') as f:
         f.write("\n".join(all_nodes))
 
-    # [最准确的分组检测逻辑]
-    local_config = f"""
+    # 配置专用的 Gemini 规则
+    # 策略：Gemini 走专门的组，该组包含美国、新加坡等可能解锁的节点
+    encoded_raw_url = urllib.parse.quote(raw_url)
+    online_api = f"https://api.v1.mk/sub?target=clash&url={encoded_raw_url}&insert=false&emoji=true&list=true&config=https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash%2Fconfig%2FACL4SSR_Online_Full.ini"
+    
+    print(f"🔄 尝试在线转换...")
+    clash_config = get_content(online_api, 60)
+
+    if "proxies:" in clash_config:
+        # 在线版由于是远程生成的，很难动态插入 Gemini 分组，但我们可以在规则里引导
+        with open('./sub/config.yaml', 'w', encoding='utf-8') as f:
+            f.write(clash_config)
+    else:
+        # 本地保底版：增加 Gemini 专项分组
+        print("⚠️ 启用本地保底（含 Gemini 专项分组）")
+        local_template = f"""
 mixed-port: 7890
 allow-lan: true
 mode: rule
 log-level: info
-ipv6: false
 
 proxy-providers:
   my_nodes:
     type: http
     url: "{raw_url}"
     interval: 3600
-    path: ./nodes_list.txt
+    path: ./sub_merge.txt
     health-check:
       enable: true
       interval: 600
       url: http://www.gstatic.com/generate_204
 
 proxy-groups:
-  # --- Gemini 专用组 ---
-  # 核心原理：访问 Gemini API 接口。
-  # 1. 如果 IP 被禁，返回 403 -> Clash 判定失败
-  # 2. 如果地区不支持，返回 400 -> Clash 判定失败
-  # 3. 只有真正能用的 IP 才会显示延迟，进入该组
   - name: 🤖 Gemini 专用
     type: url-test
     use: [my_nodes]
-    url: 'https://generativelanguage.googleapis.com/v1beta/models?key=detect'
+    # 筛选关键词：这里你可以自定义，Clash 会在 provider 中筛选匹配的节点
+    filter: "(?i)美国|US|United States|新加坡|SG|Singapore|日本|JP|Japan"
+    url: 'https://gemini.google.com'
     interval: 300
-    tolerance: 50
   
-  - name: 🚀 全球自动
+  - name: 🚀 自动选择
     type: url-test
     use: [my_nodes]
     url: 'http://www.gstatic.com/generate_204'
@@ -126,15 +117,15 @@ proxy-groups:
     use: [my_nodes]
 
 rules:
+  # Gemini 域名走专用组
   - DOMAIN-SUFFIX,gemini.google.com,🤖 Gemini 专用
-  - DOMAIN-SUFFIX,generativelanguage.googleapis.com,🤖 Gemini 专用
-  - DOMAIN-SUFFIX,aistudio.google.com,🤖 Gemini 专用
+  - DOMAIN-KEYWORD,generativelanguage,🤖 Gemini 专用
+  - DOMAIN-SUFFIX,google.com,🚀 自动选择
   - GEOIP,CN,DIRECT
-  - MATCH,🚀 全球自动
+  - MATCH,🚀 自动选择
 """
-    with open('./sub/config.yaml', 'w', encoding='utf-8') as f:
-        f.write(local_config)
-    print("📦 本地配置 config.yaml 已更新，去重与 Gemini 策略已就绪。")
+        with open('./sub/config.yaml', 'w', encoding='utf-8') as f:
+            f.write(local_template)
 
 if __name__ == '__main__':
     start()
