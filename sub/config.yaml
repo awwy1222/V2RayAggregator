@@ -3,33 +3,28 @@ mixed-port: 7890
 allow-lan: true
 mode: rule
 log-level: info
-ipv6: false
 
 proxy-providers:
   my_nodes:
     type: http
     url: "https://raw.githubusercontent.com/awwy1222/V2RayAggregator/master/sub/sub_merge.txt"
     interval: 3600
-    path: ./nodes_list.txt
+    path: ./sub_merge.txt
     health-check:
       enable: true
       interval: 600
       url: http://www.gstatic.com/generate_204
 
 proxy-groups:
-  # --- Gemini 专用组 ---
-  # 核心原理：访问 Gemini API 接口。
-  # 1. 如果 IP 被禁，返回 403 -> Clash 判定失败
-  # 2. 如果地区不支持，返回 400 -> Clash 判定失败
-  # 3. 只有真正能用的 IP 才会显示延迟，进入该组
   - name: 🤖 Gemini 专用
     type: url-test
     use: [my_nodes]
-    url: 'https://generativelanguage.googleapis.com/v1beta/models?key=detect'
+    # 筛选关键词：这里你可以自定义，Clash 会在 provider 中筛选匹配的节点
+    filter: "(?i)美国|US|United States|新加坡|SG|Singapore|日本|JP|Japan"
+    url: 'https://gemini.google.com'
     interval: 300
-    tolerance: 50
   
-  - name: 🚀 全球自动
+  - name: 🚀 自动选择
     type: url-test
     use: [my_nodes]
     url: 'http://www.gstatic.com/generate_204'
@@ -40,8 +35,9 @@ proxy-groups:
     use: [my_nodes]
 
 rules:
+  # Gemini 域名走专用组
   - DOMAIN-SUFFIX,gemini.google.com,🤖 Gemini 专用
-  - DOMAIN-SUFFIX,generativelanguage.googleapis.com,🤖 Gemini 专用
-  - DOMAIN-SUFFIX,aistudio.google.com,🤖 Gemini 专用
+  - DOMAIN-KEYWORD,generativelanguage,🤖 Gemini 专用
+  - DOMAIN-SUFFIX,google.com,🚀 自动选择
   - GEOIP,CN,DIRECT
-  - MATCH,🚀 全球自动
+  - MATCH,🚀 自动选择
