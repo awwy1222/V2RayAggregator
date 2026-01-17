@@ -8,6 +8,7 @@ on:
   schedule:
     - cron: "0 0,12 * * *"
 
+# 必须显式开启写入权限，否则推送更新时会报错
 permissions:
   contents: write
 
@@ -16,27 +17,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # 升级到最新版，解决 deprecated 报错
         with:
           fetch-depth: 0
 
       - name: Install Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5 # 升级到最新版
         with:
-          python-version: "3.10" # 固定版本比 3.x 更稳妥
+          python-version: "3.10" # 固定版本最稳妥
 
       - name: Install Requirements
         run: |
-          # 增加一个容错判断，防止 requirements.txt 不存在时报错
-          if [ -f ./utils/requirements.txt ]; then pip install -r ./utils/requirements.txt; else pip install requests; fi
+          # 鲁棒性安装：优先装 requirements，没有就装 requests
+          if [ -f ./utils/requirements.txt ]; then 
+            pip install -r ./utils/requirements.txt
+          else 
+            pip install requests 
+          fi
 
       - name: Run Script
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           python ./utils/list_merge.py
-        # --- 优化点 1: 增加超时保护 ---
-        # 物理检测（socket连接）比较耗时，防止 Actions 默认超时导致失败
+        # 【关键】因为你的脚本要进行物理 IP 解析和 TCP 握手，必须调高超时时间
         timeout-minutes: 20 
 
       - name: Commit and Push
@@ -44,8 +48,6 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          # --- 优化点 2: 增强提交逻辑 ---
-          # 即使没有新节点，脚本生成的 status.txt 时间戳也会触发更新，保证不报错
-          git commit -m "Auto Update: $(date +'%Y-%m-%d %H:%M:%S') with Gemini Check" || exit 0
-          # --- 优化点 3: 稳健推送 ---
+          # 即使节点没有变化，脚本里的 status.txt 时间戳也会触发更新，确保不会因 empty commit 报错
+          git commit -m "Auto Update: $(date +'%Y-%m-%d %H:%M:%S') [Gemini Checked]" || exit 0
           git push origin master
