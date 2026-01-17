@@ -35,6 +35,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          # 核心修复：如果冲突，强制以本次运行生成的结果为准
+          # 关键步骤：先同步你刚才在网页上的删除操作，避免冲突
+          git pull origin master --rebase -X ours || echo "No changes to pull"
           git commit -m "Auto Update Nodes" || exit 0
           git push origin master --force
