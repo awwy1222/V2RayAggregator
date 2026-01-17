@@ -1,4 +1,0 @@
-  - {name: "[openproxylist.com] vmess-MX", server: 216.238.87.47, port: 27502, type: vmess, uuid: b8155ce4-7e08-4c40-800f-8671312b7124, alterId: 0, cipher: auto, tls: false, skip-cert-verify: false}
-  - {name: "🇭🇰 [openproxylist.com] trojan-HK", server: 58.152.25.236, port: 443, type: trojan, password: BxceQaOe, sni: t.me%2Fripaojiedian, skip-cert-verify: false}
-  - {name: "🇭🇰 [openproxylist.com] trojan-HK 2", server: 58.152.46.60, port: 443, type: trojan, password: BxceQaOe, sni: "%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%2B%5BBy%2BDukeMehdi%5D%2Btrojan-HK%2B", skip-cert-verify: false}
-  - {name: "🇭🇰 [openproxylist.com] trojan-HK 3", server: 58.152.25.86, port: 443, type: trojan, password: BxceQaOe, sni: "%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%20%5BBy%20DukeMehdi%5D%20trojan-HK%20", skip-cert-verify: false}
