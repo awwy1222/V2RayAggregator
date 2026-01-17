@@ -1,90 +1,64 @@
-import requests
-import base64
-import os
-import json
-import urllib.parse
+import requests, base64, os, json, urllib.parse
 
 def get_content(url):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'}
         r = requests.get(url, headers=headers, timeout=20)
         return r.text if r.status_code == 200 else ""
-    except:
-        return ""
+    except: return ""
 
 def start():
-    # --- 1. 获取当前仓库信息 (用于自动生成转换链接) ---
-    # 自动获取 GitHub Actions 里的环境变量
-    github_repository = os.getenv('GITHUB_REPOSITORY', '你的用户名/你的仓库名')
+    # 自动识别仓库信息
+    repo = os.getenv('GITHUB_REPOSITORY', 'awwy1222/V2RayAggregator')
     
-    # --- 2. 抓取节点 ---
-    sub_list_path = './sub/sub_list.json'
-    if not os.path.exists(sub_list_path):
-        print("错误：找不到 sub/sub_list.json")
-        return
-
-    with open(sub_list_path, 'r', encoding='utf-8') as f:
+    # 1. 抓取所有源
+    with open('./sub/sub_list.json', 'r', encoding='utf-8') as f:
         sub_list = [item for item in json.load(f) if item.get('enabled')]
 
     all_nodes = []
     for item in sub_list:
-        print(f"正在横扫: {item.get('remarks', '未知源')}")
+        print(f"正在横扫: {item['remarks']}")
         content = get_content(item['url'])
         if content:
-            # 尝试 Base64 解码提取
             try:
-                # 预处理：去掉换行符
-                pure_data = content.replace('\n','').replace('\r','').strip()
-                decoded = base64.b64decode(pure_data).decode('utf-8')
+                # 尝试Base64解码
+                decoded = base64.b64decode(content.strip().replace('\n','')).decode('utf-8')
                 nodes = decoded.split('\n')
             except:
                 nodes = content.split('\n')
             
-            count = 0
             for n in nodes:
                 n = n.strip()
                 if any(n.startswith(p) for p in ["vmess://", "ss://", "ssr://", "trojan://", "vless://"]):
                     all_nodes.append(n)
-                    count += 1
-            print(f"--- 成功提取 {count} 个节点")
 
-    # --- 3. 清洗与去重 ---
+    # 2. 去重与清洗
     valid_nodes = list(set(all_nodes))
-    # 过滤明显的广告节点
-    valid_nodes = [n for n in valid_nodes if "广告" not in n and "官网" not in n]
-    
-    print(f"\n===== 统计：总共收割有效节点 {len(valid_nodes)} 个 =====")
+    # 简单过滤广告
+    valid_nodes = [n for n in valid_nodes if "群" not in n and "广告" not in n]
+    print(f"\n===== 收割完成：共计 {len(valid_nodes)} 个节点 =====")
 
-    # --- 4. 强制存盘 (TXT 格式) ---
+    # 3. 保存为 TXT 供转换器读取
     os.makedirs('./sub', exist_ok=True)
-    final_text = "\n".join(valid_nodes)
-    
+    raw_text = "\n".join(valid_nodes)
     with open('./sub/sub_merge.txt', 'w', encoding='utf-8') as f:
-        f.write(final_text)
-    
-    # 同时生成 Base64 版本
-    with open('./sub/sub_merge_base64.txt', 'w', encoding='utf-8') as f:
-        f.write(base64.b64encode(final_text.encode('utf-8')).decode('utf-8'))
+        f.write(raw_text)
 
-    # --- 5. 自动生成 Clash 订阅链接 (核心步骤) ---
-    # 我们不直接生成 YAML，因为节点太多本地处理太慢且容易错
-    # 我们生成一个专用的 Clash 转换链接，你直接把这个链接填进 Clash 即可
+    # 4. 自动生成 Clash 配置文件 (调用转换 API)
+    # 构造 Raw 链接
+    raw_url = f"https://raw.githubusercontent.com/{repo}/master/sub/sub_merge.txt"
+    # 使用支持大流量的转换后端
+    convert_api = f"https://api.v1.mk/sub?target=clash&url={urllib.parse.quote(raw_url)}&insert=false&emoji=true&list=true&tfo=false&scv=false&fdn=false&sort=false"
     
-    raw_url = f"https://raw.githubusercontent.com/{github_repository}/master/sub/sub_merge.txt"
-    encoded_raw_url = urllib.parse.quote(raw_url)
+    print("正在生成自动分组的 Clash 配置文件...")
+    clash_yaml = get_content(convert_api)
     
-    # 使用顶级转换后端：支持国旗、自动分组、去重
-    clash_subscribe_url = f"https://api.v1.mk/sub?target=clash&url={encoded_raw_url}&insert=false&emoji=true&list=true&tfo=false&scv=false&fdn=false&sort=false"
-    
-    # 把这个链接存到一个文件里，方便你以后复制
-    with open('./sub/clash_url.txt', 'w', encoding='utf-8') as f:
-        f.write(clash_subscribe_url)
-
-    print("\n✅ 已生成节点列表：sub/sub_merge.txt")
-    print(f"✅ 已生成 Clash 专用订阅链接，请查看：sub/clash_url.txt")
-    print("-" * 30)
-    print(f"直接复制这个链接到 Clash 即可：\n{clash_subscribe_url}")
-    print("-" * 30)
+    if "proxies:" in clash_yaml:
+        with open('./sub/config.yaml', 'w', encoding='utf-8') as f:
+            f.write(clash_yaml)
+        print("✅ 成功！生成了 sub/config.yaml")
+    else:
+        print("❌ 转换 API 忙，但 TXT 已更新，你可以手动用外部转换器。")
 
 if __name__ == '__main__':
     start()
