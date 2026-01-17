@@ -5,6 +5,11 @@ on:
   schedule:
     - cron: "0 0,12 * * *"
 
+# 强制声明权限，防止机器人无法提交文件
+permissions:
+  contents: write
+  workflows: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,14 +24,11 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Set Timezone
-        run: sudo timedatectl set-timezone 'Asia/Shanghai'
-
       - name: Install Requirements
         run: |
           pip install -r ./utils/requirements.txt
 
-      - name: Running Tasks
+      - name: Run Script
         run: |
           python ./utils/list_merge.py
 
@@ -35,6 +37,6 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          # 关键点：如果发生冲突，强制以机器人生成的新文件为准，覆盖一切
+          # 如果有冲突，强制以本地生成的结果为准
           git commit -m "Auto Update Nodes" || exit 0
           git push origin master --force
