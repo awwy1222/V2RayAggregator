@@ -1,0 +1,1 @@
+https://api.v1.mk/sub?target=clash&url=https%3A//raw.githubusercontent.com/awwy1222/V2RayAggregator/master/sub/sub_merge.txt&insert=false&emoji=true&list=true&tfo=false&scv=false&fdn=false&sort=false
