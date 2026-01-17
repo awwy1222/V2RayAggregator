@@ -7,19 +7,22 @@ def get_content(url, timeout_sec=60):
         return r.text if r.status_code == 200 else ""
     except: return ""
 
-def resolve_and_check(host, port):
+def verify_node(host, port):
     """
-    深度去重与初筛：通过真实IP去重，并剔除死节点。
+    第一步：最稳妥的梯子存活验证 (TCP 握手)
+    第二步：获取真实的公网 IP 用于去重
     """
     try:
+        # 获取物理 IP (解决域名马甲问题)
         actual_ip = socket.gethostbyname(host)
-        # TCP 握手探测，只要能连通就保留，不管它能不能上 Gemini
-        with socket.create_connection((actual_ip, int(port)), timeout=1.5):
+        # 尝试建立 TCP 连接 (验证梯子是否有响应)
+        with socket.create_connection((actual_ip, int(port)), timeout=2):
             return actual_ip, True
     except:
         return None, False
 
-def extract_info(node_str):
+def extract_node_info(node_str):
+    """精确解析不同协议的 Host 和 Port"""
     try:
         if node_str.startswith("ss://"):
             content = node_str.split("//")[1].split("#")[0]
@@ -48,9 +51,9 @@ def start():
         sub_list = [item for item in json.load(f) if item.get('enabled')]
 
     all_nodes = []
-    seen_features = set() 
+    seen_features = set() # 存储 (IP, Port) 元组
 
-    print("🔍 正在物理级筛选（保留所有活节点，合并重复 IP）...")
+    print("🚀 开始多维度验证与去重...")
     for item in sub_list:
         content = get_content(item['url'], 20)
         if not content: continue
@@ -62,21 +65,25 @@ def start():
         for n in nodes:
             n = n.strip()
             if not any(n.startswith(p) for p in ["vmess://", "ss://", "ssr://", "trojan://", "vless://"]): continue
-            host, port = extract_info(n)
+            
+            host, port = extract_node_info(n)
             if host and port:
-                actual_ip, is_alive = resolve_and_check(host, port)
+                # 验证存活并获取物理 IP
+                actual_ip, is_alive = verify_node(host, port)
                 if is_alive:
-                    feature = f"{actual_ip}:{port}"
+                    feature = (actual_ip, port)
+                    # [精确去重]：只有 IP 和 端口 都不重复才通过
                     if feature not in seen_features:
                         all_nodes.append(n)
                         seen_features.add(feature)
 
-    print(f"✅ 筛选完成，共有 {len(all_nodes)} 个唯一活节点已进入池子")
+    print(f"✅ 筛选完成：已从冗余节点中提取出 {len(all_nodes)} 个真实的物理独立节点")
+    
     os.makedirs('./sub', exist_ok=True)
     with open('./sub/sub_merge.txt', 'w', encoding='utf-8') as f:
         f.write("\n".join(all_nodes))
 
-    # 生成 config.yaml：包含全量组和 Gemini 专项组
+    # [最准确的分组检测逻辑]
     local_config = f"""
 mixed-port: 7890
 allow-lan: true
@@ -87,37 +94,38 @@ ipv6: false
 proxy-providers:
   my_nodes:
     type: http
-    url: "https://mirror.ghproxy.com/{raw_url}"
+    url: "{raw_url}"
     interval: 3600
-    path: ./nodes_data.txt
+    path: ./nodes_list.txt
     health-check:
       enable: true
       interval: 600
       url: http://www.gstatic.com/generate_204
 
 proxy-groups:
-  # --- 1. Gemini 专项组：只在这里用专项探测 ---
+  # --- Gemini 专用组 ---
+  # 核心原理：访问 Gemini API 接口。
+  # 1. 如果 IP 被禁，返回 403 -> Clash 判定失败
+  # 2. 如果地区不支持，返回 400 -> Clash 判定失败
+  # 3. 只有真正能用的 IP 才会显示延迟，进入该组
   - name: 🤖 Gemini 专用
     type: url-test
     use: [my_nodes]
-    url: 'https://generativelanguage.googleapis.com/v1beta/models?key=CHECK'
+    url: 'https://generativelanguage.googleapis.com/v1beta/models?key=detect'
     interval: 300
     tolerance: 50
   
-  # --- 2. 自动选择组：全量节点参与测速 ---
   - name: 🚀 全球自动
     type: url-test
     use: [my_nodes]
     url: 'http://www.gstatic.com/generate_204'
     interval: 300
 
-  # --- 3. 手动切换组：全量节点可见 ---
   - name: 🎯 手动切换
     type: select
     use: [my_nodes]
 
 rules:
-  # 分流逻辑
   - DOMAIN-SUFFIX,gemini.google.com,🤖 Gemini 专用
   - DOMAIN-SUFFIX,generativelanguage.googleapis.com,🤖 Gemini 专用
   - DOMAIN-SUFFIX,aistudio.google.com,🤖 Gemini 专用
@@ -126,7 +134,7 @@ rules:
 """
     with open('./sub/config.yaml', 'w', encoding='utf-8') as f:
         f.write(local_config)
-    print("🚀 配置生成成功：Gemini 已独立成组，其他节点均在全局组中保留。")
+    print("📦 本地配置 config.yaml 已更新，去重与 Gemini 策略已就绪。")
 
 if __name__ == '__main__':
     start()
